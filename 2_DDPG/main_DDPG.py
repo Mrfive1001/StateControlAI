@@ -33,7 +33,7 @@ ddpg = ddpg(a_dim, s_dim, a_bound, reload_flag)
 
 max_Episodes = 300000
 Learning_Start = False
-var = 2  # control exploration
+var = 10  # control exploration
 step_me = np.zeros([max_Episodes])
 reward_me = np.zeros([max_Episodes])
 
@@ -76,12 +76,12 @@ for i in range(max_Episodes):
         j += 1
 
         if done:
-            print('Episode:', i, ' ep_reward: %i' % int(ep_reward), 'step', j,  'Explore: %.2f' % var, )
+            print('Episode:', i, ' ep_reward: %.4f' % ep_reward, 'step', j,  'Explore: %.2f' % var, )
             # if ep_reward > -300:
             break
 
     reward_me[i] = ep_reward
-    if var < 0.1:
+    if var < 0.5:
         break
 
 ddpg.net_save()

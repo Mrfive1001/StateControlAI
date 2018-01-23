@@ -39,6 +39,15 @@ class SSCPENV(object):
         u = - 2 * x - 3 - omega ** 2 * delta_x - 2 * omega * delta_x_dot + self.xd_dot2
         u_origin = u
 
+        u_norm = abs((u - np.mean(self.u_bound)) / abs(self.u_bound[0] - self.u_bound[1]) * 2)
+        Penalty_bound = 0.75
+        if u_norm < Penalty_bound:
+            Satu_Penalty = 0
+        else:
+            if u_norm>8:
+                u_norm = 8
+            Satu_Penalty = - 1000 * (np.exp(0.1 * (u_norm - Penalty_bound)) - 1)
+
         # 限幅
         if u > np.max(self.u_bound):
             u = np.max(self.u_bound)
@@ -55,15 +64,11 @@ class SSCPENV(object):
         self.t = self.t + self.delta_t
 
         # Reward Calculation
-        u_norm = abs((u - np.mean(self.u_bound)) / abs(self.u_bound[0] - self.u_bound[1]) * 2)
-        Penalty_bound = 0.75
-        if u_norm < Penalty_bound:
-            Satu_Penalty = 0
-        else:
-            b = 0.9
-            xxx = (u_norm - Penalty_bound) / (1 - Penalty_bound)
-            Satu_Penalty = -np.log2(1.000000001 - xxx) / np.log2(b) / 5
-        reward = (2*omega + 2*Satu_Penalty)/500
+
+            # b = 0.9
+            # xxx = (u_norm - Penalty_bound) / (1 - Penalty_bound)
+            # Satu_Penalty = -np.log2(1.01 - xxx) / np.log2(b) / 5
+        reward = (omega + Satu_Penalty/2) / 500
 
         info = {}
         info['action'] = u
@@ -72,12 +77,12 @@ class SSCPENV(object):
         info['reward'] = reward
         if self.t > self.total_time:
             done = True
+            # if abs(delta_x)+abs(delta_x_dot)>0.5:
+                # reward -= 10
+                # pass
         else:
             done = False
 
-        if done:
-            if abs(delta_x)+abs(delta_x_dot)<0.5:
-                reward += 10
 
         # Return
         return self.x, reward, done, info
