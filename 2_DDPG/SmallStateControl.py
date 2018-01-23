@@ -77,7 +77,7 @@ class SSCPENV(object):
 
         if done:
             if abs(delta_x)+abs(delta_x_dot)<0.1:
-                reward += 20
+                reward += 10
 
         # Return
         return self.x, reward, done, info
