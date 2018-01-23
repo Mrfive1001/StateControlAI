@@ -14,7 +14,7 @@ class ddpg(object):
         self.GAMMA = 0.9     # reward discount
         self.TAU = 0.01      # soft replacement
         self.MEMORY_CAPACITY = 10000
-        self.BATCH_SIZE = 32
+        self.BATCH_SIZE = 320
         self.pointer = 0
         self.a_replace_counter, self.c_replace_counter = 0, 0
         self.iteration=0

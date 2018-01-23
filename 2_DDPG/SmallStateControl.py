@@ -65,7 +65,6 @@ class SSCPENV(object):
             Satu_Penalty = -np.log2(1.000000001 - xxx) / np.log2(b) / 5
         reward = (omega + Satu_Penalty)/500
 
-
         info = {}
         info['action'] = u
         info['time'] = self.t
@@ -75,6 +74,10 @@ class SSCPENV(object):
             done = True
         else:
             done = False
+
+        if done:
+            if abs(delta_x)+abs(delta_x_dot)<0.1:
+                reward += 20
 
         # Return
         return self.x, reward, done, info
