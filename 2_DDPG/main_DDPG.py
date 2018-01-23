@@ -53,7 +53,7 @@ for i in range(max_Episodes):
         action = np.clip(np.random.normal(action, var), 0, 20)  # add randomness to action selection for exploration
         state_next, reward, done, info = env.step(action[0])
 
-        if i == 30:
+        if i == 200:
             state_track.append(state_now.copy())
             action_track.append(info['action'])
             time_track.append(info['time'])
@@ -81,7 +81,7 @@ for i in range(max_Episodes):
             break
 
     reward_me[i] = ep_reward
-    if var < 1:
+    if var < 0.1:
         break
 
 ddpg.net_save()
