@@ -4,7 +4,7 @@ import numpy as np
 import sys
 
 tf.set_random_seed(2)
-unit = 128
+unit = 64
 batch_size = 256
 
 ###############################  DDPG  ####################################
@@ -14,9 +14,9 @@ class ddpg(object):
 
         # DDPG网络参数
         self.method = 'MovFan'
-        self.LR_A = 0.001    # learning rate for actor
-        self.LR_C = 0.002    # learning rate for critic
-        self.GAMMA = 1    # reward discount
+        self.LR_A = 0.0001    # learning rate for actor
+        self.LR_C = 0.0002    # learning rate for critic
+        self.GAMMA = 0.9    # reward discount
         self.TAU = 0.01      # soft replacement
         self.MEMORY_CAPACITY = 10000
         self.BATCH_SIZE = batch_size

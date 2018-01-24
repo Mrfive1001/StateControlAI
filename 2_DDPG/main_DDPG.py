@@ -30,7 +30,7 @@ ddpg = ddpg(a_dim, s_dim, a_bound, False)
 ###############################  Training  ####################################
 
 
-max_Episodes = 300
+max_Episodes = 200
 Learning_Start = False
 var = 10.0  # control exploration
 
@@ -47,7 +47,7 @@ for i in range(max_Episodes):
 
         if Learning_Start:
             ddpg.learn()
-            var *= .99998  # decay the action randomness
+            var *= .9998  # decay the action randomness
             RENDER = True
         else:
             if ddpg.pointer > ddpg.MEMORY_CAPACITY:
@@ -61,8 +61,8 @@ for i in range(max_Episodes):
             print('Episode:', i, ' ep_reward: %.4f' % ep_reward, 'step', j, 'Explore: %.2f' % var, )
             break
 
-    if var < 2:
-        var = 2
+    if var < 1:
+        var = 1
 
 # ddpg.net_save()
 
@@ -75,7 +75,7 @@ action_ori_track = []
 reward_track = []
 omega_track = []
 reward_me = 0
-
+var = 0
 while True:
 
     action = ddpg.choose_action(state_now)
@@ -98,7 +98,7 @@ while True:
     state_now = state_next
     reward_me += reward
 
-    if done:
+    if done :
         break
 
 print(reward_me)
