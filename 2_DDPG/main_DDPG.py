@@ -30,7 +30,7 @@ ddpg = ddpg(a_dim, s_dim, a_bound, False)
 ###############################  Training  ####################################
 
 
-max_Episodes = 200
+max_Episodes = 150
 Learning_Start = False
 var = 10.0  # control exploration
 
