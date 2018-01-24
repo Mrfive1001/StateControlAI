@@ -3,6 +3,10 @@ import tensorflow as tf
 import numpy as np
 import sys
 
+tf.set_random_seed(2)
+unit = 30
+batch_size = 256
+
 ###############################  DDPG  ####################################
 
 class ddpg(object):
@@ -15,7 +19,7 @@ class ddpg(object):
         self.GAMMA = 1    # reward discount
         self.TAU = 0.01      # soft replacement
         self.MEMORY_CAPACITY = 10000
-        self.BATCH_SIZE = 128
+        self.BATCH_SIZE = batch_size
         self.pointer = 0
         self.a_replace_counter, self.c_replace_counter = 0, 0
         self.iteration=0
@@ -103,7 +107,7 @@ class ddpg(object):
 
     def _build_a(self, s, scope, trainable):
         with tf.variable_scope(scope):
-            n_l1 = 30
+            n_l1 = unit
             net = tf.layers.dense(s, n_l1, activation=tf.nn.relu, name='l1', trainable=trainable)
             a = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, name='a', trainable=trainable)
             return tf.multiply(a, self.a_bound[0], name='scaled_a') + self.a_bound[1]
@@ -111,7 +115,7 @@ class ddpg(object):
 
     def _build_c(self, s, a, scope, trainable):
         with tf.variable_scope(scope):
-            n_l1 = 30
+            n_l1 = unit
             w1_s = tf.get_variable('w1_s', [self.s_dim, n_l1], trainable=trainable)
             w1_a = tf.get_variable('w1_a', [self.a_dim, n_l1], trainable=trainable)
             b1 = tf.get_variable('b1', [1, n_l1], trainable=trainable)

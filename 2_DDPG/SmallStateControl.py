@@ -17,14 +17,13 @@ class SSCPENV(object):
         self.x = self.reset()
         self.u_bound = 30 * np.array([-1, 1])
 
-
     def reset(self):
+        self.t = 0
         if self.init_x:
-            return self.init_x
+            self.x = self.init_x
         else:
-            self.t = 0
             self.x = np.zeros(self.x_dim)
-            return self.x
+        return self.x
 
     def render(self):
         pass
@@ -39,36 +38,22 @@ class SSCPENV(object):
         u = - 2 * x - 3 - omega ** 2 * delta_x - 2 * omega * delta_x_dot + self.xd_dot2
         u_origin = u
 
-        u_norm = abs((u - np.mean(self.u_bound)) / abs(self.u_bound[0] - self.u_bound[1]) * 2)
-        Penalty_bound = 0.75
-        if u_norm < Penalty_bound:
-            Satu_Penalty = 0
-        else:
-            if u_norm>8:
-                u_norm = 8
-            Satu_Penalty = - 1000 * (np.exp(0.1 * (u_norm - Penalty_bound)) - 1)
-
         # 限幅
         if u > np.max(self.u_bound):
             u = np.max(self.u_bound)
         elif u < np.min(self.u_bound):
             u = np.min(self.u_bound)
 
-
         # 微分方程
         A = np.array([[0, 1], [2, 0]])
         B = np.array([0, 1])
         B_con = np.array([0, 3])
         x_dot = np.dot(A, self.x) + np.dot(B, u) + B_con
-        self.x += self.delta_t*x_dot
+        self.x += self.delta_t * x_dot
         self.t = self.t + self.delta_t
 
         # Reward Calculation
-
-            # b = 0.9
-            # xxx = (u_norm - Penalty_bound) / (1 - Penalty_bound)
-            # Satu_Penalty = -np.log2(1.01 - xxx) / np.log2(b) / 5
-        reward = (omega + Satu_Penalty/2) / 500
+        reward = self.reward_design(u, omega,(delta_x,delta_x_dot))
 
         info = {}
         info['action'] = u
@@ -77,12 +62,33 @@ class SSCPENV(object):
         info['reward'] = reward
         if self.t > self.total_time:
             done = True
-            # if abs(delta_x)+abs(delta_x_dot)>0.5:
-                # reward -= 10
-                # pass
         else:
             done = False
 
-
         # Return
         return self.x, reward, done, info
+
+    def reward_design(self, u, omega,delta):
+        # 计算舵面奖励，可调参数界限penalty_bound
+        u_norm = abs((u - np.mean(self.u_bound)) / abs(self.u_bound[0] - self.u_bound[1]) * 2)
+        Penalty_bound = 0.75
+        if u_norm < Penalty_bound:
+            Satu_Penalty = 0
+        else:
+            if u_norm > 8:
+                u_norm = 8
+            Satu_Penalty = - 1000 * (np.exp(0.1 * (u_norm - Penalty_bound)) - 1)
+
+        # w的奖励
+        omega_Penalty = omega
+
+        # 结束状态的奖励
+        end_Penalty = 0
+        if self.t > self.total_time:
+            if abs(delta[0]) + abs(delta[1]) < 0.5:
+                end_Penalty = 1
+
+        # 计算三部分reward，按照一定比例，可调比例
+        reward = 1 * Satu_Penalty + 1 * omega_Penalty + 1 * end_Penalty
+        reward = reward / float(self.total_time / self.delta_t)  # 归一化
+        return reward
