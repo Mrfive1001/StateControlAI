@@ -17,10 +17,12 @@ class SSCPENV(object):
         self.u_bound = 30 * np.array([-1, 1])
 
     def reset(self):
+        self.t = 0
         if self.init_x:
-            return self.init_x
+            self.x = self.init_x
         else:
-            return np.zeros(self.x_dim)
+            self.x = np.zeros(self.x_dim)
+        return self.x
 
     def render(self):
         pass
