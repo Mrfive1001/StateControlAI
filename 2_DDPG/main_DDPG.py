@@ -25,24 +25,15 @@ a_bound = env.abound
 print("环境动作空间的上界为", a_bound)
 print('-----------------------------\t')
 
-reload_flag = False
-ddpg = ddpg(a_dim, s_dim, a_bound, reload_flag)
+ddpg = ddpg(a_dim, s_dim, a_bound, False)
 
 ###############################  Training  ####################################
 
 
-max_Episodes = 300000
+max_Episodes = 3000
 Learning_Start = False
-var = 10  # control exploration
-step_me = np.zeros([max_Episodes])
-reward_me = np.zeros([max_Episodes])
+var = 10.0  # control exploration
 
-state_track = []
-action_track = []
-time_track = []
-action_ori_track = []
-reward_track = []
-omega_track = []
 
 for i in range(max_Episodes):
     state_now = env.reset()
@@ -53,19 +44,11 @@ for i in range(max_Episodes):
         action = np.clip(np.random.normal(action, var), 0, 20)  # add randomness to action selection for exploration
         state_next, reward, done, info = env.step(action[0])
 
-        if i == 200:
-            state_track.append(state_now.copy())
-            action_track.append(info['action'])
-            time_track.append(info['time'])
-            action_ori_track.append(info['u_ori'])
-            reward_track.append(info['reward'])
-            omega_track.append(action)
-
         ddpg.store_transition(state_now, action, reward, state_next, np.array([done * 1.0]))
 
         if Learning_Start:
             ddpg.learn()
-            var *= .99998  # decay the action randomness
+            var *= .999998  # decay the action randomness
             RENDER = True
         else:
             if ddpg.pointer > ddpg.MEMORY_CAPACITY:
@@ -76,54 +59,63 @@ for i in range(max_Episodes):
         j += 1
 
         if done:
-            print('Episode:', i, ' ep_reward: %.4f' % ep_reward, 'step', j,  'Explore: %.2f' % var, )
-            # if ep_reward > -300:
+            print('Episode:', i, ' ep_reward: %.4f' % ep_reward, 'step', j, 'Explore: %.2f' % var, )
             break
 
-    reward_me[i] = ep_reward
     if var < 0.5:
         break
 
 ddpg.net_save()
 
-plt.figure(1)
-plt.plot(reward_me)
-plt.savefig("reward_me.png")
+###############################  Test  ####################################
+state_now = env.reset()
+state_track = []
+action_track = []
+time_track = []
+action_ori_track = []
+reward_track = []
+omega_track = []
+reward_me = 0
 
-plt.figure(2)
+while True:
+
+    omega = ddpg.choose_action(state_now)
+    state_next, reward, done, info = env.step(omega[0])
+
+    state_track.append(state_now.copy())
+    action_track.append(info['action'])
+    time_track.append(info['time'])
+    action_ori_track.append(info['u_ori'])
+    reward_track.append(info['reward'])
+    omega_track.append(float(omega))
+
+    state_now = state_next
+    reward_me += reward
+
+    if done:
+        break
+
+print(reward_me)
+plt.figure(1)
 plt.plot(time_track, [x[0] for x in state_track])
 plt.grid()
+plt.title('x')
 
 #
-plt.figure(3)
+plt.figure(2)
 plt.plot(time_track, action_track)
 plt.plot(time_track, action_ori_track)
+plt.title('action')
 plt.grid()
 
-plt.figure(4)
+plt.figure(3)
 plt.plot(time_track, reward_track)
 plt.grid()
+plt.title('reward')
 
-plt.figure(5)
+plt.figure(4)
 plt.plot(time_track, omega_track)
 plt.grid()
-
+plt.title('omega')
 
 plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#
