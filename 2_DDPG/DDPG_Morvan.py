@@ -4,7 +4,7 @@ import numpy as np
 import sys
 
 tf.set_random_seed(2)
-unit = 30
+unit = 128
 batch_size = 256
 
 ###############################  DDPG  ####################################

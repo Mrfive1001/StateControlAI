@@ -30,10 +30,9 @@ ddpg = ddpg(a_dim, s_dim, a_bound, False)
 ###############################  Training  ####################################
 
 
-max_Episodes = 3000
+max_Episodes = 300
 Learning_Start = False
 var = 10.0  # control exploration
-
 
 for i in range(max_Episodes):
     state_now = env.reset()
@@ -62,8 +61,8 @@ for i in range(max_Episodes):
             print('Episode:', i, ' ep_reward: %.4f' % ep_reward, 'step', j, 'Explore: %.2f' % var, )
             break
 
-    if var < 1:
-        break
+    if var < 2:
+        var = 2
 
 # ddpg.net_save()
 
@@ -79,16 +78,23 @@ reward_me = 0
 
 while True:
 
-    omega = ddpg.choose_action(state_now)
-    state_next, reward, done, info = env.step(omega[0])
+    action = ddpg.choose_action(state_now)
+    action = np.clip(np.random.normal(action, var), 0, 20)
+    state_next, reward, done, info = env.step(action[0])
+    ddpg.store_transition(state_now, action, reward, state_next, np.array([done * 1.0]))
+
 
     state_track.append(state_now.copy())
     action_track.append(info['action'])
     time_track.append(info['time'])
     action_ori_track.append(info['u_ori'])
     reward_track.append(info['reward'])
-    omega_track.append(float(omega))
-
+    if Learning_Start:
+        ddpg.learn()
+        RENDER = True
+    else:
+        if ddpg.pointer > ddpg.MEMORY_CAPACITY:
+            Learning_Start = True
     state_now = state_next
     reward_me += reward
 
@@ -114,7 +120,7 @@ plt.grid()
 plt.title('reward')
 
 plt.figure(4)
-plt.plot(time_track, omega_track)
+plt.plot(time_track, action_track)
 plt.grid()
 plt.title('omega')
 
