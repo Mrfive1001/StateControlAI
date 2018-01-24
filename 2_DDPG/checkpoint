@@ -1,2 +1,2 @@
-model_checkpoint_path: "D:\\English\\StateControlAI\\2_DDPG/data.chkp"
-all_model_checkpoint_paths: "D:\\English\\StateControlAI\\2_DDPG/data.chkp"
+model_checkpoint_path: "/home/d632/test/chenglin/StateControlAI2/2_DDPG/data.chkp"
+all_model_checkpoint_paths: "/home/d632/test/chenglin/StateControlAI2/2_DDPG/data.chkp"

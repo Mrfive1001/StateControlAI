@@ -33,7 +33,7 @@ ddpg = ddpg(a_dim, s_dim, a_bound, reload_flag)
 
 max_Episodes = 300000
 Learning_Start = False
-var = 2  # control exploration
+var = 10  # control exploration
 step_me = np.zeros([max_Episodes])
 reward_me = np.zeros([max_Episodes])
 
@@ -53,7 +53,7 @@ for i in range(max_Episodes):
         action = np.clip(np.random.normal(action, var), 0, 20)  # add randomness to action selection for exploration
         state_next, reward, done, info = env.step(action[0])
 
-        if i == 30:
+        if i == 200:
             state_track.append(state_now.copy())
             action_track.append(info['action'])
             time_track.append(info['time'])
@@ -76,12 +76,12 @@ for i in range(max_Episodes):
         j += 1
 
         if done:
-            print('Episode:', i, ' ep_reward: %i' % int(ep_reward), 'step', j,  'Explore: %.2f' % var, )
+            print('Episode:', i, ' ep_reward: %.4f' % ep_reward, 'step', j,  'Explore: %.2f' % var, )
             # if ep_reward > -300:
             break
 
     reward_me[i] = ep_reward
-    if var < 1:
+    if var < 0.5:
         break
 
 ddpg.net_save()
