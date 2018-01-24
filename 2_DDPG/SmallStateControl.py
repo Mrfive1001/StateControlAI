@@ -89,6 +89,6 @@ class SSCPENV(object):
                 end_Penalty = 1
 
         # 计算三部分reward，按照一定比例，可调比例
-        reward = 1 * Satu_Penalty + 1 * omega_Penalty + 1 * end_Penalty
-        reward = reward / float(self.total_time / self.delta_t)  # 归一化
+        reward = 1 * Satu_Penalty + 1 * omega_Penalty
+        reward = reward / float(self.total_time / self.delta_t)+  10* end_Penalty  # 归一化
         return reward

@@ -48,7 +48,7 @@ for i in range(max_Episodes):
 
         if Learning_Start:
             ddpg.learn()
-            var *= .999998  # decay the action randomness
+            var *= .99998  # decay the action randomness
             RENDER = True
         else:
             if ddpg.pointer > ddpg.MEMORY_CAPACITY:
@@ -62,10 +62,10 @@ for i in range(max_Episodes):
             print('Episode:', i, ' ep_reward: %.4f' % ep_reward, 'step', j, 'Explore: %.2f' % var, )
             break
 
-    if var < 0.5:
+    if var < 1:
         break
 
-ddpg.net_save()
+# ddpg.net_save()
 
 ###############################  Test  ####################################
 state_now = env.reset()
