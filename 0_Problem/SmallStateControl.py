@@ -37,7 +37,7 @@ class SSCPENV(object):
         x_dot = self.x[1]
         delta_x = x - self.xd
         delta_x_dot = x_dot - self.xd_dot
-        u = - 2 * x - 3 - omega ** 2 * delta_x - 2 * omega * delta_x_dot + self.xd_dot2
+        u = - 1 * x - 3 - omega ** 2 * delta_x - 2 * omega * delta_x_dot + self.xd_dot2
         u_origin = u
 
         # 限幅
@@ -47,7 +47,7 @@ class SSCPENV(object):
             u = np.min(self.u_bound)
 
         # 微分方程
-        A = np.array([[0, 1], [2, 0]])
+        A = np.array([[0, 1], [1, 0]])
         B = np.array([0, 1])
         B_con = np.array([0, 3])
         x_dot = np.dot(A, self.x) + np.dot(B, u) + B_con
@@ -55,7 +55,7 @@ class SSCPENV(object):
         self.t = self.t + self.delta_t
 
         # Reward Calculation
-        reward = self.reward_design(u, omega,(delta_x,delta_x_dot))
+        reward = self.reward_design(u, omega, (delta_x, delta_x_dot))
 
         info = {}
         info['action'] = u
@@ -70,15 +70,15 @@ class SSCPENV(object):
         # Return
         return self.x, reward, done, info
 
-    def reward_design(self, u, omega,delta):
+    def reward_design(self, u, omega, delta):
         # 计算舵面奖励，可调参数界限penalty_bound
         u_norm = abs((u - np.mean(self.u_bound)) / abs(self.u_bound[0] - self.u_bound[1]) * 2)
         Penalty_bound = 0.75
         if u_norm < Penalty_bound:
             Satu_Penalty = 0
         else:
-            if u_norm > 8:
-                u_norm = 8
+            if u_norm > 5:
+                u_norm = 5
             Satu_Penalty = - 1000 * (np.exp(0.1 * (u_norm - Penalty_bound)) - 1)
 
         # w的奖励
@@ -87,10 +87,11 @@ class SSCPENV(object):
         # 结束状态的奖励
         end_Penalty = 0
         if self.t > self.total_time:
-            if abs(delta[0]) + abs(delta[1]) < 0.5:
-                end_Penalty = 1
+            if abs(delta[0]) > 1:
+                end_Penalty -= 1
 
         # 计算三部分reward，按照一定比例，可调比例
-        reward = 2 * Satu_Penalty + 1.5 * omega_Penalty
-        reward = reward / float(self.total_time / self.delta_t)+  20* end_Penalty  # 归一化
+        sub = 0.5
+        reward = sub * Satu_Penalty + (sub+1) * omega_Penalty
+        reward = reward / float(self.total_time / self.delta_t) + 20 * end_Penalty  # 归一化
         return reward

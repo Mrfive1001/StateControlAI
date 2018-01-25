@@ -20,17 +20,17 @@ import SmallStateControl
 tf.set_random_seed(2)
 
 GAME = 'Pendulum-v0'
-OUTPUT_GRAPH = True
+OUTPUT_GRAPH = False
 LOG_DIR = './log'
 N_WORKERS = multiprocessing.cpu_count()
-MAX_EP_STEP = 600
+MAX_EP_STEP = 510
 MAX_GLOBAL_EP = 2000
 GLOBAL_NET_SCOPE = 'Global_Net'
-UPDATE_GLOBAL_ITER = 50
+UPDATE_GLOBAL_ITER = 30
 GAMMA = 0.9
 ENTROPY_BETA = 0.01
 LR_A = 0.0001    # learning rate for actor
-LR_C = 0.001    # learning rate for critic
+LR_C = 0.0001    # learning rate for critic
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
 
@@ -248,7 +248,6 @@ while True:
     action_ori_track.append(info['u_ori'])
     reward_track.append(info['reward'])
     omega_track.append(float(omega))
-    penalty_track.append(info['penalty'])
 
 
     state_now = state_next
@@ -279,11 +278,6 @@ plt.figure(4)
 plt.plot(time_track, omega_track)
 plt.grid()
 plt.title('omega')
-
-plt.figure(5)
-plt.plot(time_track, penalty_track)
-plt.grid()
-plt.title('penalty')
 
 
 plt.show()
