@@ -29,7 +29,9 @@ class SSCPENV(object):
         pass
 
     def step(self, omega):
-
+        if self.action_dim == 1:
+            if type(omega) == np.ndarray:
+                omega = omega[0]
         # 控制律
         x = self.x[0]
         x_dot = self.x[1]
