@@ -5,7 +5,8 @@ class SSCPENV(object):
     def __init__(self, x_dim=2, action_dim=1, init_x=None):
         self.x_dim = x_dim
         self.action_dim = action_dim
-        self.abound = np.array([10, 10])
+        self.abound = np.linspace(0,10,5)
+        self.n_action = len(self.abound)
         self.init_x = init_x
         self.state_dim = self.x_dim
         self.t = 0
@@ -32,12 +33,15 @@ class SSCPENV(object):
         if self.action_dim == 1:
             if type(omega) == np.ndarray:
                 omega = omega[0]
+        omega = self.abound[int(omega)]
         # 控制律
         x = self.x[0]
         x_dot = self.x[1]
         delta_x = x - self.xd
         delta_x_dot = x_dot - self.xd_dot
-        u = - 1 * x - 3 - omega ** 2 * delta_x - 2 * omega * delta_x_dot + self.xd_dot2
+        a = 3
+        b = 4
+        u = - a * x - b - omega ** 2 * delta_x - 2 * omega * delta_x_dot + self.xd_dot2
         u_origin = u
 
         # 限幅
@@ -47,9 +51,9 @@ class SSCPENV(object):
             u = np.min(self.u_bound)
 
         # 微分方程
-        A = np.array([[0, 1], [1, 0]])
+        A = np.array([[0, 1], [a, 0]])
         B = np.array([0, 1])
-        B_con = np.array([0, 3])
+        B_con = np.array([0, b])
         x_dot = np.dot(A, self.x) + np.dot(B, u) + B_con
         self.x += self.delta_t * x_dot
         self.t = self.t + self.delta_t
@@ -91,6 +95,6 @@ class SSCPENV(object):
                 end_Penalty -= 1
 
         # 计算三部分reward，按照一定比例，可调比例
-        reward = 0.7 * Satu_Penalty + 1 * omega_Penalty
+        reward = 1 * Satu_Penalty + 1 * omega_Penalty
         reward = reward / float(self.total_time / self.delta_t) + 20 * end_Penalty  # 归一化
         return reward
