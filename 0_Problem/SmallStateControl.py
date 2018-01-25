@@ -37,7 +37,9 @@ class SSCPENV(object):
         x_dot = self.x[1]
         delta_x = x - self.xd
         delta_x_dot = x_dot - self.xd_dot
-        u = - 1 * x - 3 - omega ** 2 * delta_x - 2 * omega * delta_x_dot + self.xd_dot2
+        a = 1
+        b = 4
+        u = - a * x - b - omega ** 2 * delta_x - 2 * omega * delta_x_dot + self.xd_dot2
         u_origin = u
 
         # 限幅
@@ -47,9 +49,9 @@ class SSCPENV(object):
             u = np.min(self.u_bound)
 
         # 微分方程
-        A = np.array([[0, 1], [1, 0]])
+        A = np.array([[0, 1], [a, 0]])
         B = np.array([0, 1])
-        B_con = np.array([0, 3])
+        B_con = np.array([0,b])
         x_dot = np.dot(A, self.x) + np.dot(B, u) + B_con
         self.x += self.delta_t * x_dot
         self.t = self.t + self.delta_t

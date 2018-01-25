@@ -5,7 +5,7 @@ class SSCPENV(object):
     def __init__(self, x_dim=2, action_dim=1, init_x=None):
         self.x_dim = x_dim
         self.action_dim = action_dim
-        self.abound = np.linspace(0,10,5)
+        self.abound = np.linspace(0,12,5)
         self.n_action = len(self.abound)
         self.init_x = init_x
         self.state_dim = self.x_dim
@@ -39,8 +39,8 @@ class SSCPENV(object):
         x_dot = self.x[1]
         delta_x = x - self.xd
         delta_x_dot = x_dot - self.xd_dot
-        a = 3
-        b = 4
+        a = 2
+        b = 5
         u = - a * x - b - omega ** 2 * delta_x - 2 * omega * delta_x_dot + self.xd_dot2
         u_origin = u
 
@@ -91,9 +91,10 @@ class SSCPENV(object):
         # 结束状态的奖励
         end_Penalty = 0
         if self.t > self.total_time:
-            if abs(delta[0]) > 1:
+            if delta[0] > 1:
                 end_Penalty -= 1
-
+            if delta[0] < -2:
+                end_Penalty -= 0.5
         # 计算三部分reward，按照一定比例，可调比例
         reward = 1 * Satu_Penalty + 1 * omega_Penalty
         reward = reward / float(self.total_time / self.delta_t) + 20 * end_Penalty  # 归一化

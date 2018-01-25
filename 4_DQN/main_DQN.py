@@ -1,7 +1,7 @@
 from DQN import DeepQNetwork
 from SmallStateControlDis import SSCPENV
 import matplotlib.pyplot as plt
-
+from DuelDQN import DuelingDQN as DQ
 
 if __name__ == "__main__":
     # maze game
@@ -11,18 +11,19 @@ if __name__ == "__main__":
     action_ori_track = []
     omega_track = []
     env = SSCPENV()
-    RL = DeepQNetwork(env.n_action, 2,
+    RL = DQ(env.n_action, 2,
                       learning_rate=0.01,
                       reward_decay=0.9,
-                      e_greedy=0.9,
-                      replace_target_iter=200,
+                      e_greedy=0.95,
+                      replace_target_iter=500,
                       memory_size=3000,
-                      e_greedy_increment=0.00006
-                      # output_graph=True
+                      e_greedy_increment=0.00003,
+                      batch_size = 256,
+                      output_graph=False
                       )
     step = 0
 
-    episodes = 300
+    episodes = 500
     for episode in range(episodes):
         ep_reward = 0
         # initial observation
