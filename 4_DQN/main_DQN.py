@@ -23,7 +23,7 @@ if __name__ == "__main__":
              dueling=True
              )
     step = 0
-
+    ep_reward = 0
     episodes = 500
     for episode in range(episodes):
         ep_reward = 0

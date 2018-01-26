@@ -5,7 +5,7 @@ class SSCPENV(object):
     def __init__(self, x_dim=2, action_dim=1, init_x=None):
         self.x_dim = x_dim
         self.action_dim = action_dim
-        self.abound = np.array([10, 10])
+        self.abound = np.array([0, 20])
         self.init_x = init_x
         self.state_dim = self.x_dim
         self.t = 0
@@ -93,6 +93,6 @@ class SSCPENV(object):
                 end_Penalty -= 1
 
         # 计算三部分reward，按照一定比例，可调比例
-        reward = 1 * Satu_Penalty + 1.5 * omega_Penalty
+        reward = 0.5 * Satu_Penalty + 1.5 * omega_Penalty
         reward = reward / float(self.total_time / self.delta_t) + 20 * end_Penalty  # 归一化
         return reward
