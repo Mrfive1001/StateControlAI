@@ -3,9 +3,8 @@ The Dueling DQN based on this paper: https://arxiv.org/abs/1511.06581
 
 View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 
-Using:
-Tensorflow: 1.0
-gym: 0.8.0
+Add API by MrFive
+Include DQN DuelingDQN DoubleDQN
 """
 
 import numpy as np
@@ -15,37 +14,44 @@ np.random.seed(1)
 tf.set_random_seed(1)
 
 
-class DuelingDQN:
+class DQN:
     def __init__(
             self,
-            n_actions,
-            n_features,
+            n_actions,  # 动作空间动作数目
+            n_features,  # 状态个数
             learning_rate=0.001,
-            reward_decay=0.9,
-            e_greedy=0.9,
-            replace_target_iter=200,
-            memory_size=500,
-            batch_size=32,
-            e_greedy_increment=None,
+            replace_target_iter=200,  # 更新目标网络代数
+            memory_size=500,  # 记忆池数量
+            batch_size=32,  # 每次更新数目
             output_graph=False,
-            dueling=True,
             sess=None,
+            dueling=False,  # 使用Dueling
+            double=False,
+            gamma=0.9,
+            e_greedy_end=0.1,  # 最后的探索值 e_greedy
+            e_liner_times=1000,  # 探索值经历多少次学习变成e_end
+            units = 50
+
     ):
         self.n_actions = n_actions
         self.n_features = n_features
         self.lr = learning_rate
-        self.gamma = reward_decay
-        self.epsilon_max = e_greedy
+        self.gamma = gamma
         self.replace_target_iter = replace_target_iter
         self.memory_size = memory_size
         self.batch_size = batch_size
-        self.epsilon_increment = e_greedy_increment
-        self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
+        self.e_liner_times = e_liner_times
+        self.epsilon_init = 1  # 初始的探索值
+        self.epsilon = self.epsilon_init
+        self.epsilon_end = e_greedy_end
 
-        self.dueling = dueling      # decide to use dueling DQN or not
+        self.dueling = dueling  # decide to use dueling DQN or not
+        self.double = double
+
+        self.units = units
 
         self.learn_step_counter = 0
-        self.memory = np.zeros((self.memory_size, n_features*2+2))
+        self.memory = np.zeros((self.memory_size, n_features * 2 + 2))
         self._build_net()
         t_params = tf.get_collection('target_net_params')
         e_params = tf.get_collection('eval_net_params')
@@ -80,7 +86,7 @@ class DuelingDQN:
                     self.A = tf.matmul(l1, w2) + b2
 
                 with tf.variable_scope('Q'):
-                    out = self.V + (self.A - tf.reduce_mean(self.A, axis=1, keep_dims=True))     # Q = V(s) + A(s,a)
+                    out = self.V + (self.A - tf.reduce_mean(self.A, axis=1, keep_dims=True))  # Q = V(s) + A(s,a)
             else:
                 with tf.variable_scope('Q'):
                     w2 = tf.get_variable('w2', [n_l1, self.n_actions], initializer=w_initializer, collections=c_names)
@@ -94,7 +100,7 @@ class DuelingDQN:
         self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
         with tf.variable_scope('eval_net'):
             c_names, n_l1, w_initializer, b_initializer = \
-                ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 20, \
+                ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], self.units, \
                 tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)  # config of layers
 
             self.q_eval = build_layers(self.s, c_names, n_l1, w_initializer, b_initializer)
@@ -105,7 +111,7 @@ class DuelingDQN:
             self._train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
 
         # ------------------ build target_net ------------------
-        self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
+        self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')  # input
         with tf.variable_scope('target_net'):
             c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
 
@@ -121,7 +127,7 @@ class DuelingDQN:
 
     def choose_action(self, observation):
         observation = observation[np.newaxis, :]
-        if np.random.uniform() < self.epsilon:  # choosing action
+        if np.random.uniform() > self.epsilon:  # choosing action
             actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
             action = np.argmax(actions_value)
         else:
@@ -136,26 +142,32 @@ class DuelingDQN:
         sample_index = np.random.choice(self.memory_size, size=self.batch_size)
         batch_memory = self.memory[sample_index, :]
 
-        q_next = self.sess.run(self.q_next, feed_dict={self.s_: batch_memory[:, -self.n_features:]}) # next observation
-        q_eval = self.sess.run(self.q_eval, {self.s: batch_memory[:, :self.n_features]})
+        batch_state = batch_memory[:, :self.n_features]
+        batch_action = batch_memory[:, self.n_features].astype(int)
+        batch_reward = batch_memory[:, self.n_features + 1]
+        batch_state_next = batch_memory[:, -self.n_features:]
 
-        q_target = q_eval.copy()
+        if self.double == False:
+            q_next = self.sess.run(self.q_next, feed_dict={self.s_: batch_state_next}) # next observation
+            q_eval = self.sess.run(self.q_eval, {self.s: batch_state})
 
-        batch_index = np.arange(self.batch_size, dtype=np.int32)
-        eval_act_index = batch_memory[:, self.n_features].astype(int)
-        reward = batch_memory[:, self.n_features + 1]
+            q_target = q_eval.copy()
 
-        q_target[batch_index, eval_act_index] = reward + self.gamma * np.max(q_next, axis=1)
-
+            batch_index = np.arange(self.batch_size, dtype=np.int32)
+            q_target[batch_index, batch_action] = batch_reward + self.gamma * np.max(q_next, axis=1)
+        else:
+            # double DQN
+            q_target = self.sess.run(self.q_eval, feed_dict={self.s: batch_state})
+            q_next1 = self.sess.run(self.q_eval, feed_dict={self.s: batch_state_next})
+            q_next2 = self.sess.run(self.q_next, feed_dict={self.s_: batch_state_next})
+            batch_action_withMaxQ = np.argmax(q_next1, axis=1)
+            batch_index = np.arange(self.batch_size, dtype=np.int32)
+            q_next_Max = q_next2[batch_index, batch_action_withMaxQ]
+            q_target[batch_index, batch_action] = batch_reward + self.gamma * q_next_Max
         _, self.cost = self.sess.run([self._train_op, self.loss],
-                                     feed_dict={self.s: batch_memory[:, :self.n_features],
+                                     feed_dict={self.s: batch_state,
                                                 self.q_target: q_target})
         self.cost_his.append(self.cost)
 
-        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
+        self.epsilon = max(self.epsilon - (self.epsilon_init - self.epsilon_end) / self.e_liner_times, self.epsilon_end)
         self.learn_step_counter += 1
-
-
-
-
-
