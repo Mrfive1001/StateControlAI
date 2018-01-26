@@ -38,6 +38,7 @@ if __name__ == "__main__":
             # RL take action and get next observation and reward
             observation_, reward, done, info = env.step(action)
             if episode == episodes - 1:
+                RL.epsilon = 1
                 state_track.append(observation.copy())
                 action_track.append(info['action'])
                 time_track.append(info['time'])
