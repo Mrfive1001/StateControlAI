@@ -9,7 +9,7 @@ Designer: Lin Cheng  2018.01.22
 import matplotlib.pyplot as plt
 import numpy as np
 import SmallStateControl
-from DDPG_Method import ddpg
+from DDPG import ddpg
 
 ############################ Object and Method  ####################################
 

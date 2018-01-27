@@ -110,7 +110,7 @@ class ddpg(object):
             n_l1 = unit
             net = tf.layers.dense(s, n_l1, activation=tf.nn.relu, name='l1', trainable=trainable)
             a = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, name='a', trainable=trainable)
-            return tf.multiply(a, self.a_bound[0], name='scaled_a') + self.a_bound[1]
+            return tf.multiply(a, abs(self.a_bound[0]-self.a_bound[1])/2, name='scaled_a') + np.mean(self.a_bound)
 
 
     def _build_c(self, s, a, scope, trainable):
