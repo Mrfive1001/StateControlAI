@@ -5,6 +5,7 @@ View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 
 Add API by MrFive
 Include DQN DuelingDQN DoubleDQN
+双层网络
 """
 
 import numpy as np
