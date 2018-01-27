@@ -57,7 +57,7 @@ class SSCPENV(object):
         self.t = self.t + self.delta_t
 
         # Reward Calculation
-        reward = self.reward_design(u, omega, (delta_x, delta_x_dot))
+        reward = self.reward_design(u_origin, omega, (delta_x, delta_x_dot))
 
         info = {}
         info['action'] = u

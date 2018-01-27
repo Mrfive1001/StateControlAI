@@ -30,7 +30,8 @@ class DQN:
             gamma=0.9,
             e_greedy_end=0.1,  # 最后的探索值 e_greedy
             e_liner_times=1000,  # 探索值经历多少次学习变成e_end
-            units = 50
+            units = 50,
+            train = True  # 训练的时候有探索
 
     ):
         self.n_actions = n_actions
@@ -49,6 +50,7 @@ class DQN:
         self.double = double
 
         self.units = units
+        self.train = train
 
         self.learn_step_counter = 0
         self.memory = np.zeros((self.memory_size, n_features * 2 + 2))
@@ -168,6 +170,8 @@ class DQN:
                                      feed_dict={self.s: batch_state,
                                                 self.q_target: q_target})
         self.cost_his.append(self.cost)
-
-        self.epsilon = max(self.epsilon - (self.epsilon_init - self.epsilon_end) / self.e_liner_times, self.epsilon_end)
+        if self.train == True:
+            self.epsilon = max(self.epsilon - (self.epsilon_init - self.epsilon_end) / self.e_liner_times, self.epsilon_end)
+        else:
+            self.epsilon = 0
         self.learn_step_counter += 1

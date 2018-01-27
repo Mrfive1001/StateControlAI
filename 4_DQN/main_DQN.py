@@ -20,11 +20,11 @@ if __name__ == "__main__":
              batch_size=256,
              output_graph=False,
              double=True,
-             dueling=True
+             dueling=True,
              )
     step = 0
     ep_reward = 0
-    episodes = 500
+    episodes = 300
     for episode in range(episodes):
         ep_reward = 0
         # initial observation
@@ -39,7 +39,7 @@ if __name__ == "__main__":
             # RL take action and get next observation and reward
             observation_, reward, done, info = env.step(action)
             if episode == episodes - 1:
-                RL.epsilon = 0
+                RL.train = False
                 state_track.append(observation.copy())
                 action_track.append(info['action'])
                 time_track.append(info['time'])
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         print('Episode:', episode + 1, ' ep_reward: %.4f' % ep_reward, 'epsilon: %.3f' % RL.epsilon)
     # end of game
     print('game over')
-    print(ep_reward)
+    # print(ep_reward)
     plt.figure(1)
     plt.plot(time_track, [x[0] for x in state_track])
     plt.grid()
