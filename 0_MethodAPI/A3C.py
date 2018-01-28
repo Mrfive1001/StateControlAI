@@ -12,6 +12,7 @@ import os
 import shutil
 import matplotlib.pyplot as plt
 import sys
+import copy
 
 tf.set_random_seed(2)
 
@@ -20,17 +21,17 @@ class Para:
     def __init__(self,
                  env,
                  MAX_GLOBAL_EP=2000,
-                 UPDATE_GLOBAL_ITER=50,
+                 UPDATE_GLOBAL_ITER=30,
                  GAMMA=0.9,
                  ENTROPY_BETA=0.01,
                  LR_A=0.0001,
                  LR_C=0.001,
                  ):
         self.N_WORKERS = multiprocessing.cpu_count()
-        self.MAX_EP_STEP = 600
+        self.MAX_EP_STEP = 510
         self.MAX_GLOBAL_EP = MAX_GLOBAL_EP
         self.GLOBAL_NET_SCOPE = 'Global_Net'
-        self.UPDATE_GLOBAL_ITER = 50
+        self.UPDATE_GLOBAL_ITER = UPDATE_GLOBAL_ITER
         self.GAMMA = GAMMA
         self.ENTROPY_BETA = ENTROPY_BETA
         self.LR_A = LR_A  # learning rate for actor
@@ -47,7 +48,8 @@ class Para:
         with tf.device("/cpu:0"):
             self.OPT_A = tf.train.RMSPropOptimizer(self.LR_A, name='RMSPropA')  # actor优化器定义
             self.OPT_C = tf.train.RMSPropOptimizer(self.LR_C, name='RMSPropC')  # critic优化器定义
-        self.COORD = tf.train.Coordinator()
+
+
 
 
 class A3C:
@@ -56,19 +58,20 @@ class A3C:
         with tf.device("/cpu:0"):
             self.GLOBAL_AC = ACNet(para.GLOBAL_NET_SCOPE, para)  # 定义global ， 不过只需要它的参数空间
             self.workers = []
-        for i in range(para.N_WORKERS):  # N_WORKERS 为cpu个数
-            i_name = 'W_%i' % i  # worker name，形如W_1
-            self.workers.append(Worker(i_name, self.GLOBAL_AC, para))  # 添加名字为W_i的worker
+            for i in range(para.N_WORKERS):  # N_WORKERS 为cpu个数
+                i_name = 'W_%i' % i  # worker name，形如W_1
+                self.workers.append(Worker(i_name, self.GLOBAL_AC, para))  # 添加名字为W_i的worker
 
     def run(self):
         self.para.SESS.run(tf.global_variables_initializer())
+        COORD = tf.train.Coordinator()
         worker_threads = []
         for worker in self.workers:
             job = lambda: worker.work()
             t = threading.Thread(target=job)
             t.start()
             worker_threads.append(t)
-        self.para.COORD.join(worker_threads)
+        COORD.join(worker_threads)
 
 
 class ACNet(object):
@@ -155,17 +158,18 @@ class Worker(object):
     def __init__(self, name, globalAC, para):
         self.name = name
         self.para = para
+        self.env_l = copy.deepcopy(self.para.env)
         self.AC = ACNet(name, para, globalAC)
 
     def work(self):
         total_step = 1
         buffer_s, buffer_a, buffer_r = [], [], []  # 类似于memory，存储运行轨迹
-        while not self.para.COORD.should_stop() and self.para.GLOBAL_EP < self.para.MAX_GLOBAL_EP:
-            s = self.para.env.reset()
+        while  self.para.GLOBAL_EP < self.para.MAX_GLOBAL_EP:
+            s = self.env_l.reset()
             ep_r = 0
             for ep_t in range(self.para.MAX_EP_STEP):  # MAX_EP_STEP每个片段的最大个数
                 a = self.AC.choose_action(s)  # 选取动作
-                s_, r, done, info = self.para.env.step(a)
+                s_, r, done, info = self.env_l.step(a)
                 # done = True if ep_t == MAX_EP_STEP - 1 else False  #算法运行结束条件
 
                 ep_r += r
