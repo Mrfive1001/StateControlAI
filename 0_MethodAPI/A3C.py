@@ -20,12 +20,15 @@ tf.set_random_seed(2)
 class Para:
     def __init__(self,
                  env,
+                 units_a=30,
+                 units_c=100,
                  MAX_GLOBAL_EP=2000,
                  UPDATE_GLOBAL_ITER=30,
                  GAMMA=0.9,
                  ENTROPY_BETA=0.01,
                  LR_A=0.0001,
                  LR_C=0.001,
+
                  ):
         self.N_WORKERS = multiprocessing.cpu_count()
         self.MAX_EP_STEP = 510
@@ -33,6 +36,9 @@ class Para:
         self.GLOBAL_NET_SCOPE = 'Global_Net'
         self.UPDATE_GLOBAL_ITER = UPDATE_GLOBAL_ITER
         self.GAMMA = GAMMA
+        self.units_a = units_a
+        self.units_c = units_c
+
         self.ENTROPY_BETA = ENTROPY_BETA
         self.LR_A = LR_A  # learning rate for actor
         self.LR_C = LR_C  # learning rate for critic
@@ -48,8 +54,6 @@ class Para:
         with tf.device("/cpu:0"):
             self.OPT_A = tf.train.RMSPropOptimizer(self.LR_A, name='RMSPropA')  # actor优化器定义
             self.OPT_C = tf.train.RMSPropOptimizer(self.LR_C, name='RMSPropC')  # critic优化器定义
-
-
 
 
 class A3C:
@@ -133,11 +137,11 @@ class ACNet(object):
     def _build_net(self, scope):  # 网络定义
         w_init = tf.random_normal_initializer(0., .1)
         with tf.variable_scope('actor'):
-            l_a = tf.layers.dense(self.s, 30, tf.nn.relu6, kernel_initializer=w_init, name='la')
+            l_a = tf.layers.dense(self.s, self.para.units_a, tf.nn.relu6, kernel_initializer=w_init, name='la')
             mu = tf.layers.dense(l_a, self.para.N_A, tf.nn.tanh, kernel_initializer=w_init, name='mu')
             sigma = tf.layers.dense(l_a, self.para.N_A, tf.nn.softplus, kernel_initializer=w_init, name='sigma')
         with tf.variable_scope('critic'):
-            l_c = tf.layers.dense(self.s, 100, tf.nn.relu6, kernel_initializer=w_init, name='lc')
+            l_c = tf.layers.dense(self.s, self.para.units_c, tf.nn.relu6, kernel_initializer=w_init, name='lc')
             v = tf.layers.dense(l_c, 1, kernel_initializer=w_init, name='v')  # state value
         a_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope + '/actor')
         c_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope + '/critic')
@@ -164,7 +168,7 @@ class Worker(object):
     def work(self):
         total_step = 1
         buffer_s, buffer_a, buffer_r = [], [], []  # 类似于memory，存储运行轨迹
-        while  self.para.GLOBAL_EP < self.para.MAX_GLOBAL_EP:
+        while self.para.GLOBAL_EP < self.para.MAX_GLOBAL_EP:
             s = self.env_l.reset()
             ep_r = 0
             for ep_t in range(self.para.MAX_EP_STEP):  # MAX_EP_STEP每个片段的最大个数
