@@ -19,15 +19,15 @@ tf.set_random_seed(2)
 
 class Para:
     def __init__(self,
-                 env,
-                 units_a=30,
-                 units_c=100,
-                 MAX_GLOBAL_EP=2000,
-                 UPDATE_GLOBAL_ITER=30,
-                 GAMMA=0.9,
-                 ENTROPY_BETA=0.01,
-                 LR_A=0.0001,
-                 LR_C=0.001,
+                 env,  # 环境参数包括state_dim,action_dim,abound,step,reset
+                 units_a=30,  # 双层网络，第一层的大小
+                 units_c=100,  # 双层网络，critic第一层的大小
+                 MAX_GLOBAL_EP=2000,  # 全局需要跑多少轮数
+                 UPDATE_GLOBAL_ITER=30,  # 多少代进行一次学习
+                 gamma=0.9,  # 奖励衰减率
+                 ENTROPY_BETA=0.01, # 表征探索大小的量
+                 LR_A=0.0001, # Actor的学习率
+                 LR_C=0.001, # Crtic的学习率
 
                  ):
         self.N_WORKERS = multiprocessing.cpu_count()
@@ -35,7 +35,7 @@ class Para:
         self.MAX_GLOBAL_EP = MAX_GLOBAL_EP
         self.GLOBAL_NET_SCOPE = 'Global_Net'
         self.UPDATE_GLOBAL_ITER = UPDATE_GLOBAL_ITER
-        self.GAMMA = GAMMA
+        self.gamma = gamma
         self.units_a = units_a
         self.units_c = units_c
 
@@ -44,9 +44,9 @@ class Para:
         self.LR_C = LR_C  # learning rate for critic
         self.modelpath = sys.path[0] + '/my_net/data.chkp'
         self.env = env
-        self.N_S = env.state_dim
-        self.N_A = env.action_dim
-        self.A_BOUND = [-10, 10]
+        self.N_S = env.state_dim  # 状态的维度
+        self.N_A = env.action_dim # 动作的维度
+        self.A_BOUND = env.abound # 动作的上下界
         self.GLOBAL_RUNNING_R = []
         self.GLOBAL_EP = 0
 
@@ -81,14 +81,15 @@ class A3C:
 class ACNet(object):
     def __init__(self, scope, para, globalAC=None):
         self.para = para
+        A_BOUND = self.para.A_BOUND
         if scope == self.para.GLOBAL_NET_SCOPE:  # get global network
             with tf.variable_scope(scope):
                 self.s = tf.placeholder(tf.float32, [None, self.para.N_S], 'S')
                 mu, sigma, self.v, self.a_params, self.c_params = self._build_net(scope)
 
                 with tf.name_scope('wrap_a_out'):
-                    # mu, sigma = mu * abs(A_BOUND[1] - A_BOUND[0]) / 2 +np.mean(A_BOUND), sigma + 1e-4  # 归一化反映射，防止方差为零
-                    mu, sigma = mu * 20, sigma + 1e-4
+                    mu, sigma = mu * abs(A_BOUND[1] - A_BOUND[0]) / 2 +np.mean(A_BOUND), sigma + 1e-4  # 归一化反映射，防止方差为零
+                    # mu, sigma = mu * 20, sigma + 1e-4
             with tf.name_scope('choose_a'):  # use local params to choose action
                 self.A = tf.clip_by_value(mu, self.para.A_BOUND[0], self.para.A_BOUND[1])  # 根据actor给出的分布，选取动作
 
@@ -108,8 +109,8 @@ class ACNet(object):
                     self.c_loss = tf.reduce_mean(tf.square(td))
 
                 with tf.name_scope('wrap_a_out'):
-                    # mu, sigma = mu * abs(A_BOUND[1] - A_BOUND[0]) / 2 + np.mean(A_BOUND), sigma + 1e-4  # 归一化反映射，防止方差为零
-                    mu, sigma = mu * 20, sigma + 1e-4
+                    mu, sigma = mu * abs(A_BOUND[1] - A_BOUND[0]) / 2 + np.mean(A_BOUND), sigma + 1e-4  # 归一化反映射，防止方差为零
+                    # mu, sigma = mu * 20, sigma + 1e-4
                 normal_dist = tf.contrib.distributions.Normal(mu, sigma)  # tf自带的正态分布函数
 
                 with tf.name_scope('a_loss'):
@@ -188,7 +189,7 @@ class Worker(object):
                         v_s_ = self.para.SESS.run(self.AC.v, {self.AC.s: s_[np.newaxis, :]})[0, 0]
                     buffer_v_target = []
                     for r in buffer_r[::-1]:  # reverse buffer r
-                        v_s_ = r + self.para.GAMMA * v_s_
+                        v_s_ = r + self.para.gamma * v_s_
                         buffer_v_target.append(v_s_)
                     buffer_v_target.reverse()
 
