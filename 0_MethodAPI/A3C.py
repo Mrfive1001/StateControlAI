@@ -77,6 +77,8 @@ class A3C:
             worker_threads.append(t)
         COORD.join(worker_threads)
 
+    def choose_action(self,state):
+        return self.GLOBAL_AC.choose_action(state)
 
 class ACNet(object):
     def __init__(self, scope, para, globalAC=None):
@@ -175,7 +177,6 @@ class Worker(object):
             for ep_t in range(self.para.MAX_EP_STEP):  # MAX_EP_STEP每个片段的最大个数
                 a = self.AC.choose_action(s)  # 选取动作
                 s_, r, done, info = self.env_l.step(a)
-                # done = True if ep_t == MAX_EP_STEP - 1 else False  #算法运行结束条件
 
                 ep_r += r
                 buffer_s.append(s)
@@ -207,10 +208,7 @@ class Worker(object):
                 s = s_
                 total_step += 1
                 if done:  # 每个片段结束，输出一下结果
-                    # if len(GLOBAL_RUNNING_R) == 0:  # record running episode reward
                     self.para.GLOBAL_RUNNING_R.append(ep_r)
-                    # else:
-                    #     GLOBAL_RUNNING_R.append(0.9 * GLOBAL_RUNNING_R[-1] + 0.1 * ep_r)
                     print(
                         self.name,
                         "Ep:", self.para.GLOBAL_EP,
