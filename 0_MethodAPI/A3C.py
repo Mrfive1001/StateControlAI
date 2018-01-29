@@ -83,6 +83,7 @@ class A3C:
 class ACNet(object):
     def __init__(self, scope, para, globalAC=None):
         self.para = para
+        mode = False  #正确计算输出
         A_BOUND = self.para.A_BOUND
         if scope == self.para.GLOBAL_NET_SCOPE:  # get global network
             with tf.variable_scope(scope):
@@ -90,8 +91,10 @@ class ACNet(object):
                 mu, sigma, self.v, self.a_params, self.c_params = self._build_net(scope)
 
                 with tf.name_scope('wrap_a_out'):
-                    mu, sigma = mu * abs(A_BOUND[1] - A_BOUND[0]) / 2 +np.mean(A_BOUND), sigma + 1e-4  # 归一化反映射，防止方差为零
-                    # mu, sigma = mu * 20, sigma + 1e-4
+                    if mode == True:
+                        mu, sigma = mu * abs(A_BOUND[1] - A_BOUND[0]) / 2 +np.mean(A_BOUND), sigma + 1e-4  # 归一化反映射，防止方差为零
+                    else:
+                        mu, sigma = mu * 20, sigma + 1e-4
             with tf.name_scope('choose_a'):  # use local params to choose action
                 self.A = tf.clip_by_value(mu, self.para.A_BOUND[0], self.para.A_BOUND[1])  # 根据actor给出的分布，选取动作
 
@@ -111,8 +114,10 @@ class ACNet(object):
                     self.c_loss = tf.reduce_mean(tf.square(td))
 
                 with tf.name_scope('wrap_a_out'):
-                    mu, sigma = mu * abs(A_BOUND[1] - A_BOUND[0]) / 2 + np.mean(A_BOUND), sigma + 1e-4  # 归一化反映射，防止方差为零
-                    # mu, sigma = mu * 20, sigma + 1e-4
+                    if mode == True:
+                        mu, sigma = mu * abs(A_BOUND[1] - A_BOUND[0]) / 2 + np.mean(A_BOUND), sigma + 1e-4  # 归一化反映射，防止方差为零
+                    else:
+                        mu, sigma = mu * 20, sigma + 1e-4
                 normal_dist = tf.contrib.distributions.Normal(mu, sigma)  # tf自带的正态分布函数
 
                 with tf.name_scope('a_loss'):
