@@ -1,12 +1,16 @@
 from SmallStateControl import SSCPENV
 import A3C
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+
 
 env = SSCPENV()
 para = A3C.Para(env,
                 units_a=30,
                 units_c=100,
-                MAX_GLOBAL_EP=2000,
+                MAX_GLOBAL_EP=6000,
                 UPDATE_GLOBAL_ITER=30,
                 gamma=0.9,
                 ENTROPY_BETA=0.01,

@@ -5,7 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/0_MethodAPI" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/0_Problem" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.5.2 (C:\Users\MrFive1001\AppData\Local\Programs\Python\Python35\python.exe)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Remote Python 3.5.2 (ssh://d632@192.168.199.242:22/home/d632/pyenv/DRL/bin/python3.5)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

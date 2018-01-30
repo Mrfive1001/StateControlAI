@@ -10,6 +10,8 @@ import tensorflow as tf
 import numpy as np
 import os
 import shutil
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import sys
 import copy
@@ -83,7 +85,7 @@ class A3C:
 class ACNet(object):
     def __init__(self, scope, para, globalAC=None):
         self.para = para
-        mode = False  #正确计算输出
+        mode = True  #正确计算输出
         A_BOUND = self.para.A_BOUND
         if scope == self.para.GLOBAL_NET_SCOPE:  # get global network
             with tf.variable_scope(scope):
